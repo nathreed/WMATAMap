@@ -10,8 +10,17 @@ main();
 function main() {
     console.log("Fetching stations JSON info");
     fetchStationsInfo();
-    console.log("Fetching station sequences");
-    fetchStationSequence();
+    console.log("Fetching standard routes data");
+    fetchStandardRoutesData().then(function() {
+        let routesData = arguments[0];
+        fs.writeFile("../../data/standardRoutesData.json", routesData, function(err) {
+            if(err) throw err;
+            console.log("Written standard routes data to file.");
+            console.log("Making station sequence...");
+            makeStationSequence(routesData);
+        });
+    });
+
 }
 
 function fetchStationsInfo() {
@@ -50,52 +59,66 @@ function fetchStationsInfo() {
 
 }
 
-/*
-This fetches *a* sequence, but I don't think it's the correct sequence. It probably needs reworking.
- */
-function fetchStationSequence() {
-    let lineCodes = JSON.parse(fs.readFileSync("../../data/lineCodes.json").toString());
-    let stationInfo = {};
-    let promises = [];
-    for(let i=0; i < lineCodes.length; i++) {
-        let code = lineCodes[i];
+function fetchStandardRoutesData() {
+    //Setup the URL to get the info from
+    let apiDataObject = {
+        url: "https://api.wmata.com/TrainPositions/StandardRoutes",
+        params: {
+            contentType: "json",
+            api_key: apiKey
+        }
+    };
+    let queryPart = qs.stringify(apiDataObject.params);
+    let fullURL = apiDataObject.url + "?" + queryPart;
 
-        //Setup a call to the API
-        let apiDataObject = {
-            url: "https://api.wmata.com/Rail.svc/json/jStations",
-            params: {
-                LineCode: code,
-                api_key: apiKey
+
+    return new Promise(function(resolve, reject) {
+        https.get(fullURL, function(res) {
+            if(res.statusCode < 200 || res.statusCode > 299) {
+                reject(new Error("Failed to load data FSRD, code: " + res.statusCode));
             }
-        };
-        let queryPart = qs.stringify(apiDataObject.params);
-        let fullURL = apiDataObject.url + "?" + queryPart;
-        promises.push(fetchWithPromise(fullURL));
-        //console.log("PROMISES: ", promises);
+
+            // temporary data holder
+            const body = [];
+            // on every content chunk, push it to the data array
+            res.on('data', (chunk) => body.push(chunk));
+            // we are done, resolve promise with those joined chunks
+            res.on('end', () => resolve(body.join('')));
+
+            res.on('error', (err) => reject(err));
+
+        });
+    })
+}
+
+
+function makeStationSequence(standardRoutesData) {
+    //Ok we have the standard routes data which is guaranteed to be in the right order, so we can get the stations for each line in order
+    let data = JSON.parse(standardRoutesData)["StandardRoutes"];
+    let linesToDo = JSON.parse(fs.readFileSync("../../data/lineCodes.json").toString());
+    for(let i=0; i<data.length; i++) {
+        if(linesToDo.includes(data[i]["LineCode"])) {
+            let lineSeq = [];
+            //We have not gotten info for that line yet
+            let lineCircuits = data[i]["TrackCircuits"];
+            for(let j=0; j<lineCircuits.length; j++) {
+                if(lineCircuits[j]["StationCode"] != null) {
+                    lineSeq.push(lineCircuits[j]["StationCode"]);
+                }
+            }
+            //So we don't do the same line again in reverse
+            let lineIndex = linesToDo.indexOf(data[i]["LineCode"]);
+            linesToDo.splice(lineIndex, 1);
+
+            //And finally write it to the file
+            fs.writeFile("../../data/lines/line_"+data[i]["LineCode"]+"_seq.json", JSON.stringify(lineSeq, null, 4), function(err) {
+                if(err) throw err;
+                console.log("Written line " + data[i]["LineCode"] + " sequence to file.");
+            });
+
+        }
     }
 
-    Promise.all(promises).then(function() {
-        let results = arguments[0];
-
-        for(let i=0; i<lineCodes.length; i++) {
-
-            let lineResults = JSON.parse(results[i])["Stations"];
-            let code = lineCodes[i];
-
-            let lineStations = [];
-            for(let j=0; j<lineResults.length; j++) {
-                lineStations.push(lineResults[j]["Code"]);
-            }
-
-
-            fs.writeFile("../../data/lines/line_"+code+"_seq.json", JSON.stringify(lineStations, null, 4), function(err) {
-                if(err) throw err;
-                console.log("Written line " + code + " sequence to file.");
-            });
-        }
-    }, function(err) {
-       console.log("Error ocurred with promises: " + err);
-    });
 
 }
 
