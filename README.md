@@ -1,9 +1,9 @@
-#WMATAMap
+# WMATAMap
 
 A set of tools to generate a live map of trains on the Washington Metro, using data from the WMATA API.
 This project is a rewrite and cleanup of code that I wrote a long time ago in an effort to make it work with little to no manual intervention (and also generally clean it up)
 
-##How to Use
+## How to Use
 
 ### NOTE: This is very incomplete right now. You will probably not be able to follow these directions at the moment. Feel free to poke around. Some tools will be coming soon. 
 
@@ -14,7 +14,7 @@ The following directions will help you configure and run the tools.
 
 1. Obtain an API key from WMATA (free) and place it in the `data` directory in a file named `WMATA_API_KEY.txt`
 1. If you just want to get up and running quickly, run the `autoconfigure.sh` script in the `tools` directory. This will run the necessary tools
-(each tool does only one thing) and get the `data` directory properly configured.
+(each tool does only one thing) and get the `data` directory properly configured. NOTE: You must run this script from inside the tools directory at the moment.
 1. If you'd like to obtain one of the intermediate data files, would like to fetch everything manually, or would like to update one, you can run the tools individually. Look at the README in each tool's directory
 for more info on what it needs to run.
 1. Obtain a Google Maps Javascript API key (free for what we are doing here) and place it in `webpage/MAPS_API_KEY.txt`
