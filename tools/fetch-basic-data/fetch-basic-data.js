@@ -122,25 +122,3 @@ function makeStationSequence(standardRoutesData) {
 
 }
 
-/*
-Used to return a promise from https.get
- */
-function fetchWithPromise(url) {
-    return new Promise(function(resolve, reject) {
-        https.get(url, function(res) {
-            if(res.statusCode < 200 || res.statusCode > 299) {
-                reject(new Error("Failed to load data, code: " + res.statusCode));
-            }
-
-            // temporary data holder
-            const body = [];
-            // on every content chunk, push it to the data array
-            res.on('data', (chunk) => body.push(chunk));
-            // we are done, resolve promise with those joined chunks
-            res.on('end', () => resolve(body.join('')));
-
-            res.on('error', (err) => reject(err));
-
-        });
-    });
-}
