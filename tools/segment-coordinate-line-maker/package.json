@@ -1,0 +1,8 @@
+{
+  "name": "wmata-segment-coordinate-line-maker",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "xml2js": "^0.4.19"
+  }
+}

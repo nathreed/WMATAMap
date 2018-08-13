@@ -2,3 +2,4 @@ WMATA_API_KEY.txt
 stations/
 lines/
 standardRoutesData.json
+allLines_segCoord.json

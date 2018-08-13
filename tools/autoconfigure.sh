@@ -13,5 +13,11 @@ cd ..
 cd line-distance-maker
 echo "**RUNNING line-distance-maker tool**"
 node line-distance-maker.js
-echo "**DONE: line-distance maker"
+echo "**DONE: line-distance-maker"
+cd ..
+
+cd segment-coordinate-line-maker
+echo "**RUNNING segment-coordinate-line-maker tool**"
+node segment-coordinate-line-maker.js
+echo "**DONE: segment-coordinate-line-maker"
 cd ..

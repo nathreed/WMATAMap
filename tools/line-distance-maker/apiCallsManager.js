@@ -1,8 +1,8 @@
 /*
 The callManager object is used as follows:
 - the apiCall method is called with a url to call and it returns a promise that will be resolved when the data is available
-- after one or more calls to apiCall, .start() is called and calls are made every 500ms
 - .stop() should be called when we are all done
+- .start() should be called when calls should begin. Calls will be made at a certain interval as defined by the WMATA_API_CALLS_DELAY variable on line 16
 
 URLs are processed in the order in which they were received, though the promises may be resolved out of order due to server latency
 This is probably not likely but still possible.
@@ -32,17 +32,18 @@ function CallManager() {
     };
     this.start = function() {
         let mgrObj = this;
-        this._internalInterval = setInterval(function() {
-            //console.log("L72, this is", this);
-            let urlObj = mgrObj._internalCallQueue.shift();
-            //Call the associated callback function with the results from the promise fetch
-            if(urlObj) {
-                //console.log("making call, time:", new Date());
-                mgrObj._internalMakeCall(urlObj[0]).then(function() {
-                    urlObj[1](arguments[0]);
-                });
-            }
-        }, WMATA_API_CALL_MS_DELAY);
+        if(!this._internalInterval) {
+            this._internalInterval = setInterval(function() {
+                let urlObj = mgrObj._internalCallQueue.shift();
+                //Call the associated callback function with the results from the promise fetch
+                if(urlObj) {
+                    //console.log("making call, time:", new Date());
+                    mgrObj._internalMakeCall(urlObj[0]).then(function() {
+                        urlObj[1](arguments[0]);
+                    });
+                }
+            }, WMATA_API_CALL_MS_DELAY);
+        }
     };
     this._internalMakeCall = function(url) {
         return new Promise(function(resolve, reject) {

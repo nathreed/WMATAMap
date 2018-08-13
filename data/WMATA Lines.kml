@@ -197,7 +197,7 @@
 			</Placemark>
 			<Placemark>
 				<name></name>
-				<description><![CDATA[description: <br>OBJECTID: 6<br>LINE: Red<br>YEAR: 1976<br>FROM_: Union Station<br>TO_: Rhode Island Ave-Brentwood<br>ANode: 8018<br>BNode: 8019<br>WEB_URL: http://wmata.com/rail/maps/map.cfm]]></description>
+				<description><![CDATA[description: <br>OBJECTID: 6<br>LINE: Red<br>YEAR: 1976<br>FROM_: New York Avenue<br>TO_: Rhode Island Ave-Brentwood<br>ANode: 8018<br>BNode: 8019<br>WEB_URL: http://wmata.com/rail/maps/map.cfm]]></description>
 				<styleUrl>#line-DB4436-6</styleUrl>
 				<ExtendedData>
 					<Data name='description'>
@@ -213,7 +213,7 @@
 						<value>1976</value>
 					</Data>
 					<Data name='FROM_'>
-						<value>Union Station</value>
+						<value>New York Avenue</value>
 					</Data>
 					<Data name='TO_'>
 						<value>Rhode Island Ave-Brentwood</value>
@@ -425,7 +425,7 @@
 			</Placemark>
 			<Placemark>
 				<name></name>
-				<description><![CDATA[description: <br>OBJECTID: 12<br>LINE: Red<br>YEAR: 1976<br>FROM_: Union Station<br>TO_: Navy Yard-Ballpark<br>ANode: 8018<br>BNode: 8039<br>WEB_URL: http://wmata.com/rail/maps/map.cfm]]></description>
+				<description><![CDATA[description: <br>OBJECTID: 12<br>LINE: Red<br>YEAR: 1976<br>FROM_: Union Station<br>TO_: New York Avenue<br>ANode: 8018<br>BNode: 8039<br>WEB_URL: http://wmata.com/rail/maps/map.cfm]]></description>
 				<styleUrl>#line-DB4436-6</styleUrl>
 				<ExtendedData>
 					<Data name='description'>
