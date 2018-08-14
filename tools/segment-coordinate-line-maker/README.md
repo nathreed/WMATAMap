@@ -7,3 +7,6 @@ This tool generates the data files used by the tool that obtains positions from 
 - Line distance files, created from `line-distance-maker`
 
 It places the resulting processed data in `data/allLine_segCoord.json` where it is used by other parts of the project.
+
+## Note
+Run `npm install` in this directory before running the tool to install dependencies.

@@ -1,13 +1,11 @@
 let parseString = require("xml2js").parseString;
 let fs = require("fs");
 
-let Station = require("../../common/Station.js");
-let stationsJSON = require("../../data/stations/stations.json");
-
 //Load the matchup file for matching station names to station codes when the actual name doesn't match
 let matchupDict = require("../../data/kmlNameResolution.json");
 
 let lineCodes = require("../../data/lineCodes.json");
+const Utility = require("../../common/utility.js");
 
 let stationList = [];
 
@@ -15,7 +13,7 @@ let stationList = [];
 main();
 
 function main() {
-    parseStations();
+    stationList = Utility.parseStations();
     //Line names are in the same order as the lineCodes array for easy matchup
     let lineNames = ["Red", "Yellow", "Green", "Blue", "Orange", "Silver"];
 
@@ -48,24 +46,7 @@ function main() {
     });*/
 }
 
-function parseStations() {
-    for(let i=0; i<stationsJSON.Stations.length; i++) {
-        let station = stationsJSON.Stations[i];
 
-        //Push the line codes from the station object into stationLine until we find one that is null
-        let stationLine = [];
-        for(let j=1; j<=4; j++) {
-            if(station["LineCode"+j] != null) {
-                stationLine.push(station["LineCode"+j]);
-            } else {
-                break;
-            }
-        }
-
-        stationList.push(new Station(station["Name"], station["Code"], stationLine));
-
-    }
-}
 
 //This function parses the KML file and extracts the information that we need
 function parseKML(lineName, lineCode) {

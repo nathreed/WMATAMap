@@ -1,12 +1,11 @@
 let qs = require("querystring");
-let https = require("https");
 let fs = require("fs");
 
 let apiKey = fs.readFileSync("../../data/WMATA_API_KEY.txt").toString();
 let lineCodes = JSON.parse(fs.readFileSync("../../data/lineCodes.json").toString());
 
 
-let CallManager = require("./apiCallsManager.js");
+let CallManager = require("../../common/apiCallsManager.js");
 let callManager = new CallManager();
 
 main();
@@ -20,8 +19,6 @@ function main() {
 
         let lineSeq = JSON.parse(fs.readFileSync("../../data/lines/line_"+currentLineCode+"_seq.json"));
 
-        //Start off the dataPass function with an empty array, it will return it to us full of data
-        //Then place this in the line data arr for this line
         linePromises.push(fetchLineStationPaths(lineSeq));
 
     }
