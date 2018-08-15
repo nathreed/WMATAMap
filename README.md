@@ -5,7 +5,9 @@ This project is a rewrite and cleanup of code that I wrote a long time ago in an
 
 ## How to Use
 
-### NOTE: This is very incomplete right now. You will probably not be able to follow these directions at the moment. Feel free to poke around. Some tools will be coming soon. I already have all tools, map, etc coded, I am just rewriting them to be better and will place them here as that happens.
+### Note: This is somewhat incomplete. Most of the tools are in place, but the main server remains to be cleaned up. You will be able
+to derive all the necessary data but not do anything really fun with it yet.
+
 
 Because I don't want to mess with copyright stuff by rehosting WMATA data, and because I want to provide a mechanism for updating the data should it change over time
 (e.g. new stations, etc), there are a series of tools that must be run before you can get the live map working. These tools 
@@ -21,24 +23,8 @@ for more info on what it needs to run.
 
 You do not need to do both step 2 and step 3 -- pick one or the other.
 
-The location-finding code can run in one of two modes: using precomputed locations or computing the location for each track circuit on the fly.
-There is no difference in accuracy between the two - the only drawback of using precomputed locations is that you will need to let the tool run for a little while
-(a couple hours probably) to let trains run over every circuit in the WMATA system. You may also need to obtain locations manually (by running a tool) for a few circuits.
-
-There is no significant performance difference between the two modes either, but computing the locations on the fly is wasteful in the long term
-because the most accurate they can be is at the track circuit level, and, as of right now, computed circuit positions never change, so you might as well precompute and store them.
-
-If you just want to get up and running and see a live-updating map of the trains, use the mode which calculates locations on the fly. If you'd like to run this for a longer time and you care
-about saving a bunch of CPU effort (but not much of a performance increase), use the precomputed mode.
-
-### On-the-fly
-To launch the on-the-fly demonstration: `node main/fly.js`  
-You will now be able to use one of the webpages in the `webpage` directory to view the map 
-
-### Precomputed
-To run the code that will compute and store locations as it sees trains: `node main/precompute.js`. Allow to run for 3-4 hours during WMATA hours of operation. 
-Then, check if you're missing locations for any circuits with `node tools/precompute_circuitCheck.js`, and follow the instructions in the output
-for manually obtaining the locations for these (hopefully few) circuits.
+You can then run the main positions server that obtains live positions from the WMATA API and processes them with the data derived from the tools
+with `node main/server.js`. Then you can use one of the webpages in the `webpage` directory to view the positions. 
 
 
 ## License

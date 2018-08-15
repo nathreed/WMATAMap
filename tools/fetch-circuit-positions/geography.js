@@ -13,27 +13,27 @@ function distanceBetweenPoints(point1, point2) {
     }
 
     //console.log("point1", point1)
-    var lat1 = point1[0];
-    var lon1 = point1[1];
+    let lat1 = point1[0];
+    let lon1 = point1[1];
     //console.log("lat, lon1", lat1, lon1)
 
-    var lat2 = point2[0];
-    var lon2 = point2[1];
+    let lat2 = point2[0];
+    let lon2 = point2[1];
     //console.log("lat, lon2", lat2, lon2)
 
-    var R = 6371; // km
+    let R = 6371; // km
     //console.log("lat2,1", lat2, lat1)
-    var dLat = toRad(lat2-lat1);
-    var dLon = toRad(lon2-lon1);
-    var lat1 = toRad(lat1);
-    var lat2 = toRad(lat2);
+    let dLat = toRad(lat2-lat1);
+    let dLon = toRad(lon2-lon1);
+    lat1 = toRad(lat1);
+    lat2 = toRad(lat2);
     //console.log("dLat", dLat)
-    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
         Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2);
     //console.log("a", a)
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     //console.log("r,c", R, c)
-    var d = R * c;
+    let d = R * c;
 
     //d is in km, let's convert to mi and return
     //console.log("d is", d)

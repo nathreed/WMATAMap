@@ -1,5 +1,5 @@
 module.exports = {
-    parseStations
+    parseStations, parseStations2
 };
 
 function parseStations() {
@@ -19,9 +19,26 @@ function parseStations() {
             }
         }
 
-        stationList.push(new Station(station["Name"], station["Code"], stationLine));
+        //Calculate the coordinate of the station, this is needed in the parseStations2 method though it's not used anywhere else
+        const stationLat = station["Lat"];
+        const stationLong = station["Lon"];
+        const stationCoord = [stationLat, stationLong];
+
+        stationList.push(new Station(station["Name"], station["Code"], stationLine, stationCoord));
 
     }
 
     return stationList;
+}
+
+//This function also parses the stations into an object, but it's in a different format because the positioning code needs
+//it as a dictionary keyed with the station codes to work well
+function parseStations2() {
+    //We start as a base with the regular stations list
+    let baseList = parseStations();
+    let finalStations = {};
+    for(let i=0; i<baseList.length; i++) {
+        finalStations[baseList[i].code] = baseList[i];
+    }
+    return finalStations;
 }

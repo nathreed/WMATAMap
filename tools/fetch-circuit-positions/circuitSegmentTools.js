@@ -82,9 +82,9 @@ function findCircuit(circuitId, lineCode, trackCircuits) {
 }
 
 //This function returns an object with info about the stations before and after the given circuit as well as the total number of circuits between those stations.
-function surroundingCircuitsInfo(circuitInfo, trackCircuits) {
+function surroundingCircuitsInfo(circuitInfo, lineCode, trackCircuits) {
     //Get the circuits list for the track number that the circuit in question is on
-    let circuitsList = trackCircuits[line][circuitInfo.trackNum - 1].circuits;
+    let circuitsList = trackCircuits[lineCode][circuitInfo.trackNum - 1].circuits;
 
     //First check if we are on a station right away
     if(circuitsList[circuitInfo.index].station != null) {
@@ -165,10 +165,13 @@ function findSegment(startStation, endStation, lineCode, segCoordLines) {
             //We found the segment
             return lineSegments[i];
         } else if (lineSegments[i]["fromStation"] === endStation && lineSegments[i]["toStation"] === startStation) {
-            //This should never happen
-            console.log("ERROR: SEGMENT DETECTED IN REVERSE!!");
-            //Return null so that we know there is an error afoot
-            return null;
+            //Segment detected in reverse, we just need to reverse the coordinate line before we return the line segment. Don't know why this happens for some segments but the positions are ok.
+            let workingLineSegment = lineSegments[i];
+            workingLineSegment.segmentLine = workingLineSegment.segmentLine.reverse();
+            workingLineSegment["fromStation"] = startStation;
+            workingLineSegment["toStation"] = endStation;
+            return workingLineSegment;
+
         }
     }
 }

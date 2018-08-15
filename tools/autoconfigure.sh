@@ -21,3 +21,9 @@ echo "**RUNNING segment-coordinate-line-maker tool**"
 node segment-coordinate-line-maker.js
 echo "**DONE: segment-coordinate-line-maker"
 cd ..
+
+cd fetch-circuit-positions
+echo "**RUNNING fetch-circuit-positions tool**"
+node fetch-circuit-positions.js
+echo "**DONE: fetch-circuit-positions"
+cd ..

@@ -2,8 +2,9 @@ module.exports = {
     calculateCircuitPosition: calculateCircuitPosition
 };
 
-let Geography = require("./geography.js");
-let CircuitSegmentTools = require("./circuitSegmentTools.js");
+const Geography = require("./geography.js");
+const CircuitSegmentTools = require("./circuitSegmentTools.js");
+const Utility = require("../../common/utility.js");
 
 /*
 Calculates the position of a given circuit.
@@ -15,9 +16,12 @@ function calculateCircuitPosition(circuitId, lineCode, trackCircuits, segCoordLi
         let circuitPosition;
 
         //Find out info on the surrounding circuits/before+after stations/if it is on a station
-        let surroundingCircuitInfo = CircuitSegmentTools.surroundingCircuitsInfo(circuitInfo, trackCircuits);
+        let surroundingCircuitInfo = CircuitSegmentTools.surroundingCircuitsInfo(circuitInfo, lineCode, trackCircuits);
         if(surroundingCircuitInfo.onStation !== undefined) {
             //It is on a station, we can just use the position of that station
+            let stationList = Utility.parseStations2();
+            circuitPosition = stationList[surroundingCircuitInfo.onStation]["coordinate"];
+            return {position: circuitPosition};
 
         } else {
             //Not on a station, we need to actually calculate position of the circuit
@@ -104,6 +108,8 @@ function midpointReduction(point1, point2, reachedDistance, desiredDistance) {
 
     if(differenceFactor < -0.085) {
         //We didn't go far enough. Apply the algorithm on the line from the midpoint to the second point
+        //Add in the distance to the midpoint to prevent infinite recursion in some cases
+        reachedDistance += distanceToMidpoint;
         return midpointReduction(midpointOfPoints, point2, reachedDistance, desiredDistance);
     } else if(differenceFactor > 0.085) {
         //We went too far. Apply the algorithm on the line from the first point to the midpoint.
