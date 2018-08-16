@@ -1,0 +1,9 @@
+{
+  "name": "wmatamap-main-server",
+  "version": "1.0.0",
+  "dependencies": {
+    "geojson": "~0.4.0",
+    "nodejs-websocket": "~1.7.1",
+    "jsonwebtoken": "~8.3.0"
+  }
+}

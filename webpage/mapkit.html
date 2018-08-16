@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MetroViewer MapKit</title>
+    <script src="https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js"></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            font-family: -apple-system, Roboto, "Helvetica Neue", sans-serif;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+
+<script>
+    let websocket;
+    function setupWS() {
+        websocket = new WebSocket("ws://localhost:9223");
+        websocket.addEventListener("open", function(evt) {console.log("Socket open"); initMapKit()});
+        websocket.addEventListener("close", function(evt) {console.log("Socket close"); onError()});
+        websocket.addEventListener("message", function(evt) {onMessage(evt.data)});
+        websocket.addEventListener("error", function(evt) {console.log("Socket error"); onError()});
+    }
+
+    setupWS();
+
+    function onMessage(message) {
+        message = JSON.parse(message);
+        if(message["type"] === "token") {
+            //Is auth token, ignore
+            console.log(message);
+        } else if(message["type"] === "positions") {
+            //update positions of trains with new data here
+            console.log(message);
+        }
+    }
+
+    function onError() {
+        //setTimeout(function() {setupWS()}, 3000);
+    }
+
+    function initMapKit() {
+        console.log("mapkit init called");
+        mapkit.init({
+            authorizationCallback: function(done) {
+                let wsMsgFunction = function(evt) {
+                    let message = JSON.parse(evt.data);
+                    if(message["type"] === "token") {
+                        console.log("got token message:", message);
+                        console.log("calling done...");
+                        done(message["token"]);
+                    }
+                };
+                websocket.addEventListener("message", wsMsgFunction);
+
+                //Send the request for the token, execution will jump to the
+                websocket.send("request-token");
+            },
+            language: "en"
+        });
+    }
+
+
+    //Map is initialized, let's actually add it to the thing
+    let region = new mapkit.CoordinateRegion(new mapkit.Coordinate(38.9072, -77.0369), new mapkit.CoordinateSpan(0.3, 0.3));
+    let map = new mapkit.Map("map", {region: region, showsUserLocation: true, mapType: mapkit.Map.MapTypes.Standard});
+
+</script>
+
+</body>
+</html>
