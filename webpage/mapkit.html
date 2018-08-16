@@ -38,10 +38,59 @@
         message = JSON.parse(message);
         if(message["type"] === "token") {
             //Is auth token, ignore
-            console.log(message);
+            //console.log(message);
         } else if(message["type"] === "positions") {
             //update positions of trains with new data here
-            console.log(message);
+            mapkit.importGeoJSON(message["positions"], {
+                //This is the GeoJSONDelegate object that lets us map specific parts of the geoJSON to the proper MapKit fields
+                itemForFeature: function(item, geoJSON) {
+                    //console.log("item for feature:", item, geoJSON);
+                    item.title = geoJSON["properties"]["name"];
+                    item.subtitle = geoJSON["properties"]["description"];
+                    item.clusteringIdentifier = Math.floor(Math.random() * 10000001) + ""; //random clustering ID so none of them cluster together. Also we add the empty string to make it a string.
+                    item.animates = false;
+                    item.calloutEnabled = true;
+                    //Get the color
+                    let color = geoJSON["properties"]["description"].split(" ")[1];
+                    switch(color) {
+                        case "YL":
+                            item.color = "#ffff00";
+                            break;
+                        case "BL":
+                            item.color = "#0000cc";
+                            break;
+                        case "RD":
+                            item.color = "#e60000";
+                            break;
+                        case "OR":
+                            item.color = "#ff8c1a";
+                            break;
+                        case "SV":
+                            item.color = "#999999";
+                            break;
+                        case "GR":
+                            item.color = "#009900";
+                            break;
+                    }
+                    //console.log("returning item:", item);
+                    return item;
+                },
+                geoJSONDidComplete: function(result, geoJSON) {
+                    //console.log("geoJSON did complete");
+                    //console.log("mapkit items:", result);
+                    //Remove all the annotations on the map and re-add
+                    map.removeAnnotations(map.annotations);
+                    map.addAnnotations(result.items);
+
+
+
+                },
+                geoJSONDidError: function(error, geoJSON) {
+                    console.log("geoJSON did error");
+                }
+            });
+
+
         }
     }
 
@@ -50,20 +99,17 @@
     }
 
     function initMapKit() {
-        console.log("mapkit init called");
         mapkit.init({
             authorizationCallback: function(done) {
                 let wsMsgFunction = function(evt) {
                     let message = JSON.parse(evt.data);
                     if(message["type"] === "token") {
-                        console.log("got token message:", message);
-                        console.log("calling done...");
                         done(message["token"]);
                     }
                 };
                 websocket.addEventListener("message", wsMsgFunction);
 
-                //Send the request for the token, execution will jump to the
+                //Send the request for the token, execution will jump to the websocket message callback directly above
                 websocket.send("request-token");
             },
             language: "en"
