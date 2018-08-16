@@ -27,3 +27,5 @@ echo "**RUNNING fetch-circuit-positions tool**"
 node fetch-circuit-positions.js
 echo "**DONE: fetch-circuit-positions"
 cd ..
+
+echo "ALL TOOLS DONE. DATA READY!"

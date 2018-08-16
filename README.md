@@ -5,8 +5,6 @@ This project is a rewrite and cleanup of code that I wrote a long time ago in an
 
 ## How to Use
 
-### Note: This is somewhat incomplete. Most of the tools are in place, but the main server remains to be cleaned up. You will be able to derive all the necessary data but not do anything really fun with it yet.
-
 
 Because I don't want to mess with copyright stuff by rehosting WMATA data, and because I want to provide a mechanism for updating the data should it change over time
 (e.g. new stations, etc), there are a series of tools that must be run before you can get the live map working. These tools 
