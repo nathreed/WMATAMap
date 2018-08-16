@@ -13,6 +13,7 @@ const jwtSigningInfo = require("../data/jwtSigningInfo.json");
 
 //And import the stuff that we need from other code
 const Utility = require("../common/utility.js");
+const Events = require("./events.js");
 //As well as all the precomputed circuit positions
 const circuitPositions = JSON.parse(fs.readFileSync("../data/circuitPositions.json"));
 
@@ -20,7 +21,7 @@ const circuitPositions = JSON.parse(fs.readFileSync("../data/circuitPositions.js
 let trainPositionObjects = [];
 //And the GeoJSON formatted data
 let currentFormattedData = "";
-let previousData = "";
+let previousPositions = "";
 
 //Set up the interval that will poll WMATA API
 let timingInterval = setInterval(fetchPositionsAndUpdate, 1500);
@@ -111,7 +112,7 @@ function fetchPositionsAndUpdate() {
                }
 
                //We do have to use stringify here for some reason
-               if(JSON.stringify(trainData) === JSON.stringify(previousData)) {
+               if(JSON.stringify(trainData) === JSON.stringify(previousPositions)) {
                    //Data did not change
                    console.log("No change in data.");
                    return -1;
@@ -119,9 +120,14 @@ function fetchPositionsAndUpdate() {
 
                console.log("Received new data. Running train tracking...");
                //Get steps 2 and 3 going
-               previousData = trainData;
                //Step 2
                let positions = findTrainPositions(trainData);
+               //Find events with current and previous positions
+               let events = Events.determineEvents(positions, previousPositions);
+               //Send the events to the client in an events message
+               broadcast(wsServer, JSON.stringify({type: "events", events: events}));
+               //And now set the previous data
+               previousPositions = positions;
                //Step 3
                output(positions);
 

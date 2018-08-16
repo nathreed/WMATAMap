@@ -23,6 +23,15 @@ function calculateCircuitPosition(circuitId, lineCode, trackCircuits, segCoordLi
             circuitPosition = stationList[surroundingCircuitInfo.onStation]["coordinate"];
             return {position: circuitPosition};
 
+        } else if (surroundingCircuitInfo["circuitsToBeforeStation"] === 1) {
+            //Circuits right before and right after a station we are giving the station's position because WMATA says that trains may trigger occupancy on the circuit past a station
+            let stationList = Utility.parseStations2();
+            circuitPosition = stationList[surroundingCircuitInfo["beforeStation"]]["coordinate"];
+            return {position: circuitPosition};
+        } else if(surroundingCircuitInfo["circuitsToAfterStation"] === 1) {
+            let stationList = Utility.parseStations2();
+            circuitPosition = stationList[surroundingCircuitInfo["afterStation"]]["coordinate"];
+            return {position: circuitPosition};
         } else {
             //Not on a station, we need to actually calculate position of the circuit
             //First get the total circuit count between the two stations, adding one for the circuit itself

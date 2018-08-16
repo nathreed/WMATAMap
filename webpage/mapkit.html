@@ -20,7 +20,7 @@
 
         .train-callout-content h1 {
             margin-top: 0;
-            padding: 5px 15px;
+            padding: 5px 5px;
             font-size: 16px;
             font-weight: bold;
         }
@@ -28,18 +28,34 @@
         .train-callout-content p {
             font-size: 12px;
             font-weight: normal;
+            padding: 0 5px;
+        }
+
+        #eventbar {
+            position: absolute;
+            background-color: lightgray;
+            top: 1.2em;
+            left: 1.5em;
+            padding: 0.5em;
+            border-radius: 0.5em;
+            line-height: 1.5em;
+            visibility: hidden;
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
 <div id="map"></div>
 
+<div id="eventbar"></div>
+
 <script>
     //The main websocket connection to the server, used for mapkit auth as well as position updates
     let websocket;
     //This will hold all the mapkit annotation objects for the trains. It will be updated as we go.
     let trainAnnotations = [];
-
+    //This will hold the currently displayed event objects
+    let currentEvents = [];
 
     function setupWS() {
         websocket = new WebSocket("ws://localhost:9223");
@@ -57,119 +73,180 @@
             //Is auth token, ignore
             //console.log(message);
         } else if(message["type"] === "positions") {
-            //update positions of trains with new data here
-            mapkit.importGeoJSON(message["positions"], {
-                //This is the GeoJSONDelegate object that lets us map specific parts of the geoJSON to the proper MapKit fields
-                itemForFeature: function(item, geoJSON) {
-                    //console.log("item for feature:", item, geoJSON);
-                    item.title = geoJSON["properties"]["name"];
-                    item.subtitle = geoJSON["properties"]["description"];
-                    item.clusteringIdentifier = Math.floor(Math.random() * 10000001) + ""; //random clustering ID so none of them cluster together. Also we add the empty string to make it a string.
-                    item.animates = false;
-                    //Get the color
-                    let color = geoJSON["properties"]["description"].split(" ")[1];
-                    switch(color) {
-                        case "YL":
-                            item.color = "#ffff00";
-                            break;
-                        case "BL":
-                            item.color = "#0000cc";
-                            break;
-                        case "RD":
-                            item.color = "#e60000";
-                            break;
-                        case "OR":
-                            item.color = "#ff8c1a";
-                            break;
-                        case "SV":
-                            item.color = "#999999";
-                            break;
-                        case "GR":
-                            item.color = "#009900";
-                            break;
-                    }
-
-                    //Setup the callout bubble
-                    let calloutDelegate = {
-                      calloutContentForAnnotation: function(annotation) {
-                          let element = document.createElement("div");
-                          element.className = "train-callout-content";
-                          let title = element.appendChild(document.createElement("h1"));
-                          title.textContent = annotation.title;
-                          let description = element.appendChild(document.createElement("p"));
-                          description.innerText = annotation.subtitle;
-                          return element;
-                      }
-                    };
-                    item.callout = calloutDelegate;
-                    //Set the glyph image to tpx.png which is a transparent 1x1 pixel image, just so we get only the colored markers showing
-                    //This is currently broken in safari (it renders a white square instead)
-                    /*
-                    item.glyphImage = {
-                        1: "tpx.png",
-                        2: "tpx.png",
-                        3: "tpx.png"
-                    };*/
-                    return item;
-                },
-                geoJSONDidComplete: function(result, geoJSON) {
-                    //Now we need to find out which annotations need removing, otherwise just update the rest
-                    //First check if the train annotations array is empty, i.e. if this is the first time
-                    if(trainAnnotations.length === 0) {
-                        trainAnnotations = result.items;
-                        //Add them to the map
-                        map.addAnnotations(trainAnnotations);
-                    } else {
-                        //We have existing annotations, we need to update positions on the ones that have stayed, remove the ones that are gone, and add new ones to the map
-                        for(let i=0; i<result.items.length; i++) {
-                            let itemFound = false;
-                            let itemIndex = -1;
-                            for(let j=0; j<trainAnnotations.length; j++) {
-                                //We compare subtitles because they have several pieces of info all in one - ID, line, destination
-                                if(result.items[i].subtitle === trainAnnotations[j].subtitle) {
-                                    itemFound = true;
-                                    itemIndex = j;
-                                    break;
-                                }
-                            }
-                            if(!itemFound) {
-                                //No train with that info exists, so this is a new train. Add it to the array and then to the map
-                                trainAnnotations.push(result.items[i]);
-                                map.addAnnotation(trainAnnotations[trainAnnotations.length - 1]); //Add the last annotation as it is the one we just pushed in
-                            } else {
-                                //It was found, so just update the coordinates and nothing else
-                                trainAnnotations[itemIndex].coordinate = result.items[i].coordinate;
-                            }
-                        }
-
-                        //Now check for annotations that are in the train annotations list but not the new list of positions we just got - these would be trains that have now disappeared
-                        for(let i=0; i<trainAnnotations.length; i++) {
-                            let annotationFound = false;
-                            for(let j=0; j<result.items.length; j++) {
-                                if(trainAnnotations[i].subtitle === result.items[j].subtitle) {
-                                    annotationFound = true;
-                                    break;
-                                }
-                            }
-                            if(!annotationFound) {
-                                //The annotation was not found at all in the new positions, remove it from the map and then the array
-                                map.removeAnnotation(trainAnnotations[i]);
-                                trainAnnotations.splice(i,1);
-                            }
-                        }
-
-                    }
-
-
-
-                },
-                geoJSONDidError: function(error, geoJSON) {
-                    console.log("geoJSON did error");
-                }
-            });
-
-
+            handlePositionsMessage(message);
+        } else if(message["type"] === "events") {
+            handleEventsMessage(message);
         }
+    }
+
+    function handleEventsMessage(message) {
+        /*
+        We will show events in the little events bar
+        We will unpack events from the message we just got, then assign each one an expiry date. Then we place them in a backing array.
+        Then we check expiry every time we get a new events message, remove expired events, and re-render the text for the events box.
+        */
+        let events = message["events"];
+        const EVENT_MESSAGE_EXP_TIME = 8;
+        for(let i=0; i<events.length; i++) {
+            let expDate = new Date();
+            expDate.setSeconds(expDate.getSeconds() + EVENT_MESSAGE_EXP_TIME);
+            events[i]["expiry"] = expDate;
+        }
+        //Now that all the incoming events have their expiry date set properly, check any existing events that may have expired
+        for(let i=0; i<currentEvents.length; i++) {
+            if(currentEvents[i]["expiry"] < new Date()) {
+                //Event has expired, take it out
+                console.log("removing expired event");
+                currentEvents.splice(i, 1);
+            }
+        }
+        //Add all the incoming events to the end of the current events
+        //For some reason concat is not working so we will use push
+        for(let i=0; i<events.length; i++) {
+            currentEvents.push(events[i]);
+        }
+        //Now set the text/style of the event box accordingly
+        let eventBar = document.getElementById("eventbar");
+        eventBar.innerHTML = "";
+        for(let i=0; i<currentEvents.length; i++) {
+            let evtP = eventBar.appendChild(document.createElement("p"));
+            evtP.innerText = eventDescriptionString(currentEvents[i]);
+        }
+        if(currentEvents.length === 0) {
+            eventBar.style.visibility = "hidden";
+        } else {
+            eventBar.style.visibility = "visible";
+            //eventBar.style.opacity = "0.3";
+        }
+    }
+
+    function eventDescriptionString(event) {
+        if(event["type"] === "arrival") {
+            return "Train " + event["trainId"] + " arrived at station " + event["stationName"] + ".";
+        } else if(event["type"] === "departure") {
+            return "Train " + event["trainId"] + " departed from station " + event["stationName"] + ".";
+        } else if(event["type"] === "creation") {
+            return "Train " + event["trainId"] + " entered service.";
+        } else if(event["type"] === "destruction") {
+            return "Train " + event["trainId"] + " left service.";
+        } else {
+            return "EVT ERR";
+        }
+    }
+
+    function handlePositionsMessage(message) {
+        //update positions of trains with new data here
+        mapkit.importGeoJSON(message["positions"], {
+            //This is the GeoJSONDelegate object that lets us map specific parts of the geoJSON to the proper MapKit fields
+            itemForFeature: function(item, geoJSON) {
+                //console.log("item for feature:", item, geoJSON);
+                item.title = geoJSON["properties"]["name"];
+                item.subtitle = geoJSON["properties"]["description"];
+                item.clusteringIdentifier = Math.floor(Math.random() * 10000001) + ""; //random clustering ID so none of them cluster together. Also we add the empty string to make it a string.
+                item.animates = false;
+                //Get the color
+                let color = geoJSON["properties"]["description"].split(" ")[1];
+                switch(color) {
+                    case "YL":
+                        item.color = "#ffff00";
+                        break;
+                    case "BL":
+                        item.color = "#0000cc";
+                        break;
+                    case "RD":
+                        item.color = "#e60000";
+                        break;
+                    case "OR":
+                        item.color = "#ff8c1a";
+                        break;
+                    case "SV":
+                        item.color = "#999999";
+                        break;
+                    case "GR":
+                        item.color = "#009900";
+                        break;
+                }
+
+                //Setup the callout bubble
+                let calloutDelegate = {
+                    calloutContentForAnnotation: function(annotation) {
+                        let element = document.createElement("div");
+                        element.className = "train-callout-content";
+                        let title = element.appendChild(document.createElement("h1"));
+                        title.textContent = annotation.title;
+                        let description = element.appendChild(document.createElement("p"));
+                        description.innerText = annotation.subtitle;
+                        return element;
+                    }
+                };
+                item.callout = calloutDelegate;
+                //Set the glyph image to tpx.png which is a transparent 1x1 pixel image, just so we get only the colored markers showing
+                //This is currently broken in safari (it renders a white square instead)
+                /*
+                item.glyphImage = {
+                    1: "tpx.png",
+                    2: "tpx.png",
+                    3: "tpx.png"
+                };*/
+                return item;
+            },
+            geoJSONDidComplete: function(result, geoJSON) {
+                //Now we need to find out which annotations need removing, otherwise just update the rest
+                //First check if the train annotations array is empty, i.e. if this is the first time
+                if(trainAnnotations.length === 0) {
+                    trainAnnotations = result.items;
+                    //Add them to the map
+                    map.addAnnotations(trainAnnotations);
+                } else {
+                    //We have existing annotations, we need to update positions on the ones that have stayed, remove the ones that are gone, and add new ones to the map
+                    for(let i=0; i<result.items.length; i++) {
+                        let itemFound = false;
+                        let itemIndex = -1;
+                        for(let j=0; j<trainAnnotations.length; j++) {
+                            //We compare subtitles because they have several pieces of info all in one - ID, line, destination
+                            if(result.items[i].subtitle === trainAnnotations[j].subtitle) {
+                                itemFound = true;
+                                itemIndex = j;
+                                break;
+                            }
+                        }
+                        if(!itemFound) {
+                            //No train with that info exists, so this is a new train. Add it to the array and then to the map
+                            trainAnnotations.push(result.items[i]);
+                            map.addAnnotation(trainAnnotations[trainAnnotations.length - 1]); //Add the last annotation as it is the one we just pushed in
+                        } else {
+                            //It was found, so just update the coordinates and nothing else
+                            trainAnnotations[itemIndex].coordinate = result.items[i].coordinate;
+                        }
+                    }
+
+                    //Now check for annotations that are in the train annotations list but not the new list of positions we just got - these would be trains that have now disappeared
+                    for(let i=0; i<trainAnnotations.length; i++) {
+                        let annotationFound = false;
+                        for(let j=0; j<result.items.length; j++) {
+                            if(trainAnnotations[i].subtitle === result.items[j].subtitle) {
+                                annotationFound = true;
+                                break;
+                            }
+                        }
+                        if(!annotationFound) {
+                            //The annotation was not found at all in the new positions, remove it from the map and then the array
+                            map.removeAnnotation(trainAnnotations[i]);
+                            trainAnnotations.splice(i,1);
+                        }
+                    }
+
+                }
+
+
+
+            },
+            geoJSONDidError: function(error, geoJSON) {
+                console.log("geoJSON did error");
+            }
+        });
+
+
     }
 
     function onError() {
@@ -202,8 +279,6 @@
     //Import geoJSON for the lines to the map
     mapkit.importGeoJSON("wmata-lines-geojson.json", {
         geoJSONDidComplete: function(result, geoJSON) {
-            console.log("did complete");
-            console.log(result);
             result.items.forEach(function(item) {
                if(item.items !== undefined) {
                    //It came from a mutliline geometry and has an items array of its own
@@ -218,7 +293,6 @@
             console.log("lines json parse error:", error);
         },
         styleForOverlay: function(overlay, geoJSON) {
-            console.log("determining style, geojson:", geoJSON);
             let style = {
                 lineWidth: 5
             };

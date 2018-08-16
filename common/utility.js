@@ -45,5 +45,7 @@ function parseStations2() {
 
 //This function takes a train object and returns a description string for the same
 function trainDescriptionString(train) {
-    return train.id + " " + train.line + " " + train.destination;
+    let stationsList = parseStations2();
+    let trainDestinationName = stationsList[train.destination].name;
+    return train.id + " " + train.line + " " + trainDestinationName;
 }
