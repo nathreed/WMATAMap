@@ -1,5 +1,5 @@
 module.exports = {
-    parseStations, parseStations2
+    parseStations, parseStations2, trainDescriptionString
 };
 
 function parseStations() {
@@ -41,4 +41,9 @@ function parseStations2() {
         finalStations[baseList[i].code] = baseList[i];
     }
     return finalStations;
+}
+
+//This function takes a train object and returns a description string for the same
+function trainDescriptionString(train) {
+    return train.id + " " + train.line + " " + train.destination;
 }

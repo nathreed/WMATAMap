@@ -3,3 +3,6 @@ stations/
 lines/
 standardRoutesData.json
 allLines_segCoord.json
+circuitPositions.json
+AuthKey*.p8
+jwtSigningInfo.json
