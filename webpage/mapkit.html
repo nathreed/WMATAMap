@@ -17,13 +17,30 @@
             height: 100%;
             width: 100%;
         }
+
+        .train-callout-content h1 {
+            margin-top: 0;
+            padding: 5px 15px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .train-callout-content p {
+            font-size: 12px;
+            font-weight: normal;
+        }
     </style>
 </head>
 <body>
 <div id="map"></div>
 
 <script>
+    //The main websocket connection to the server, used for mapkit auth as well as position updates
     let websocket;
+    //This will hold all the mapkit annotation objects for the trains. It will be updated as we go.
+    let trainAnnotations = [];
+
+
     function setupWS() {
         websocket = new WebSocket("ws://localhost:9223");
         websocket.addEventListener("open", function(evt) {console.log("Socket open"); initMapKit()});
@@ -49,7 +66,6 @@
                     item.subtitle = geoJSON["properties"]["description"];
                     item.clusteringIdentifier = Math.floor(Math.random() * 10000001) + ""; //random clustering ID so none of them cluster together. Also we add the empty string to make it a string.
                     item.animates = false;
-                    item.calloutEnabled = true;
                     //Get the color
                     let color = geoJSON["properties"]["description"].split(" ")[1];
                     switch(color) {
@@ -72,15 +88,77 @@
                             item.color = "#009900";
                             break;
                     }
-                    //console.log("returning item:", item);
+
+                    //Setup the callout bubble
+                    let calloutDelegate = {
+                      calloutContentForAnnotation: function(annotation) {
+                          let element = document.createElement("div");
+                          element.className = "train-callout-content";
+                          let title = element.appendChild(document.createElement("h1"));
+                          title.textContent = annotation.title;
+                          let description = element.appendChild(document.createElement("p"));
+                          description.innerText = annotation.subtitle;
+                          return element;
+                      }
+                    };
+                    item.callout = calloutDelegate;
+                    //Set the glyph image to tpx.png which is a transparent 1x1 pixel image, just so we get only the colored markers showing
+                    //This is currently broken in safari (it renders a white square instead)
+                    /*
+                    item.glyphImage = {
+                        1: "tpx.png",
+                        2: "tpx.png",
+                        3: "tpx.png"
+                    };*/
                     return item;
                 },
                 geoJSONDidComplete: function(result, geoJSON) {
-                    //console.log("geoJSON did complete");
-                    //console.log("mapkit items:", result);
-                    //Remove all the annotations on the map and re-add
-                    map.removeAnnotations(map.annotations);
-                    map.addAnnotations(result.items);
+                    //Now we need to find out which annotations need removing, otherwise just update the rest
+                    //First check if the train annotations array is empty, i.e. if this is the first time
+                    if(trainAnnotations.length === 0) {
+                        trainAnnotations = result.items;
+                        //Add them to the map
+                        map.addAnnotations(trainAnnotations);
+                    } else {
+                        //We have existing annotations, we need to update positions on the ones that have stayed, remove the ones that are gone, and add new ones to the map
+                        for(let i=0; i<result.items.length; i++) {
+                            let itemFound = false;
+                            let itemIndex = -1;
+                            for(let j=0; j<trainAnnotations.length; j++) {
+                                //We compare subtitles because they have several pieces of info all in one - ID, line, destination
+                                if(result.items[i].subtitle === trainAnnotations[j].subtitle) {
+                                    itemFound = true;
+                                    itemIndex = j;
+                                    break;
+                                }
+                            }
+                            if(!itemFound) {
+                                //No train with that info exists, so this is a new train. Add it to the array and then to the map
+                                trainAnnotations.push(result.items[i]);
+                                map.addAnnotation(trainAnnotations[trainAnnotations.length - 1]); //Add the last annotation as it is the one we just pushed in
+                            } else {
+                                //It was found, so just update the coordinates and nothing else
+                                trainAnnotations[itemIndex].coordinate = result.items[i].coordinate;
+                            }
+                        }
+
+                        //Now check for annotations that are in the train annotations list but not the new list of positions we just got - these would be trains that have now disappeared
+                        for(let i=0; i<trainAnnotations.length; i++) {
+                            let annotationFound = false;
+                            for(let j=0; j<result.items.length; j++) {
+                                if(trainAnnotations[i].subtitle === result.items[j].subtitle) {
+                                    annotationFound = true;
+                                    break;
+                                }
+                            }
+                            if(!annotationFound) {
+                                //The annotation was not found at all in the new positions, remove it from the map and then the array
+                                map.removeAnnotation(trainAnnotations[i]);
+                                trainAnnotations.splice(i,1);
+                            }
+                        }
+
+                    }
 
 
 

@@ -18,12 +18,12 @@ The following directions will help you configure and run the tools.
 (each tool does only one thing) and get the `data` directory properly configured. NOTE: You must run this script from inside the tools directory at the moment.
 1. If you'd like to obtain one of the intermediate data files, would like to fetch everything manually, or would like to update one, you can run the tools individually. Look at the README in each tool's directory
 for more info on what it needs to run.
-1. Obtain a Google Maps Javascript API key (free for what we are doing here) and place it in `webpage/MAPS_API_KEY.txt`
+1. Set up MapKit JS credentials (see `main/README.md` for more details)
 
 You do not need to do both step 2 and step 3 -- pick one or the other.
 
 You can then run the main positions server that obtains live positions from the WMATA API and processes them with the data derived from the tools
-with `node main/server.js`. Then you can use one of the webpages in the `webpage` directory to view the positions. 
+with `node main/server.js`. Then you can use `webpage/mapkit.html` to view the positions live updating.
 
 
 ## License
