@@ -15,7 +15,7 @@ function determineEvents(currentData, previousData) {
 
 
     //Now just put the two arrays of events all together into one and we are done
-    arrivalCreationEvents.concat(departureDestructionEvents);
+    arrivalCreationEvents = arrivalCreationEvents.concat(departureDestructionEvents);
     return arrivalCreationEvents;
 }
 

@@ -34,13 +34,23 @@
         #eventbar {
             position: absolute;
             background-color: lightgray;
-            top: 1.2em;
+            top: 4em;
             left: 1.5em;
             padding: 0.5em;
             border-radius: 0.5em;
             line-height: 1.5em;
             visibility: hidden;
             opacity: 0.7;
+            font-size: 10pt;
+        }
+
+        #toggleEvents {
+            position: absolute;
+            top: 0.8em;
+            left: 1.7em;
+            padding: 0.5em;
+            border-radius: 0.5em;
+            outline: none;
         }
     </style>
 </head>
@@ -48,6 +58,7 @@
 <div id="map"></div>
 
 <div id="eventbar"></div>
+<button id="toggleEvents" onclick="toggleEvents()">Toggle Events (On)</button>
 
 <script>
     //The main websocket connection to the server, used for mapkit auth as well as position updates
@@ -56,6 +67,19 @@
     let trainAnnotations = [];
     //This will hold the currently displayed event objects
     let currentEvents = [];
+    let shouldShowEvents = true;
+
+    function toggleEvents() {
+        if(shouldShowEvents) {
+            shouldShowEvents = false;
+            document.getElementById("toggleEvents").innerText = "Toggle Events (Off)";
+            document.getElementById("eventbar").style.visibility = "hidden";
+        } else {
+            shouldShowEvents = true;
+            document.getElementById("toggleEvents").innerText = "Toggle Events (On)";
+        }
+
+    }
 
     function setupWS() {
         websocket = new WebSocket("ws://localhost:9223");
@@ -96,15 +120,11 @@
         for(let i=0; i<currentEvents.length; i++) {
             if(currentEvents[i]["expiry"] < new Date()) {
                 //Event has expired, take it out
-                console.log("removing expired event");
                 currentEvents.splice(i, 1);
             }
         }
         //Add all the incoming events to the end of the current events
-        //For some reason concat is not working so we will use push
-        for(let i=0; i<events.length; i++) {
-            currentEvents.push(events[i]);
-        }
+        currentEvents = currentEvents.concat(events);
         //Now set the text/style of the event box accordingly
         let eventBar = document.getElementById("eventbar");
         eventBar.innerHTML = "";
@@ -115,16 +135,17 @@
         if(currentEvents.length === 0) {
             eventBar.style.visibility = "hidden";
         } else {
-            eventBar.style.visibility = "visible";
-            //eventBar.style.opacity = "0.3";
+            if(shouldShowEvents) {
+                eventBar.style.visibility = "visible";
+            }
         }
     }
 
     function eventDescriptionString(event) {
-        if(event["type"] === "arrival") {
-            return "Train " + event["trainId"] + " arrived at station " + event["stationName"] + ".";
-        } else if(event["type"] === "departure") {
-            return "Train " + event["trainId"] + " departed from station " + event["stationName"] + ".";
+        if(event["type"] === "departure") {
+            return "Train " + event["trainId"] + " departed from " + event["stationName"] + ".";
+        } else if(event["type"] === "arrival") {
+            return "Train " + event["trainId"] + " arrived at " + event["stationName"] + ".";
         } else if(event["type"] === "creation") {
             return "Train " + event["trainId"] + " entered service.";
         } else if(event["type"] === "destruction") {
