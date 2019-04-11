@@ -23,6 +23,9 @@ You do not need to do both step 2 and step 3 -- pick one or the other.
 You can then run the main positions server that obtains live positions from the WMATA API and processes them with the data derived from the tools
 with `node main/server.js`. Then you can use `webpage/mapkit.html` to view the positions live updating.
 
+## Screenshot
+![Screenshot of map showing metro trains](https://i.imgur.com/eZCRiEd.jpg)
+
 
 ## License
 
