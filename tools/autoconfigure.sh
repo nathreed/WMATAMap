@@ -31,4 +31,10 @@ node fetch-circuit-positions.js
 echo "**DONE: fetch-circuit-positions"
 cd ..
 
+cd ..
+cd main
+npm install
+cd ..
+cd tools
+
 echo "ALL TOOLS DONE. DATA READY!"
